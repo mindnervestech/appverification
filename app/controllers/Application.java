@@ -56,7 +56,7 @@ public class Application extends Controller {
     			}
     			
     			//mobile_number
-    			User userObj = User.getUserByMobileNumber(rForm.mobileNumber);
+    			User userObj = User.getUserByMobileNumber(rForm.mobileNumber, rForm.countryCode);
     			if (userObj != null) {
     				if ("approved".equalsIgnoreCase(userObj.status) ) {
         				//user already exists send error code.
@@ -178,19 +178,22 @@ public class Application extends Controller {
     	public String password;
     	public String verificationCode;
     	public String mobileNumber;
+    	public String countryCode;
     }
     
     public static Result validateUser() {
     	try {
     		ValidateForm form = DynamicForm.form(ValidateForm.class).bindFromRequest().get();
-    		if(	form.mobileNumber==null ||
+    		if(	form.countryCode == null ||
+    			form.countryCode.isEmpty() || 
+    			form.mobileNumber == null ||
 				form.mobileNumber.isEmpty() ||
 				form.verificationCode==null ||
 				form.verificationCode.isEmpty()) {
     			return ok(Json.toJson(new ErrorResponse(Error.E202.getCode(), Error.E202.getMessage())));
     		} else {
     			
-    			User user = User.getUserByMobileNumber(form.mobileNumber);
+    			User user = User.getUserByMobileNumber(form.mobileNumber, form.countryCode);
     			if(user == null) {
     				return ok(Json.toJson(new ErrorResponse(Error.E208.getCode(), Error.E208.getMessage())));
     			} else {

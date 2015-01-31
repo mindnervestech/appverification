@@ -35,6 +35,14 @@ public class User extends Model {
 		return find.where().eq("userName", username).eq("password",User.md5Encryption(password)).findUnique();
 	}
 	
+	public static User getUserByUserNameAndPassword(String username) throws NoSuchAlgorithmException {
+		return find.where().eq("userName", username).findUnique();
+	}
+
+	public static User getUserByMobileNumber(String mobileNumber, String countryCode) {
+		return find.where().eq("mobileNumber", mobileNumber).eq("countryCode", countryCode).findUnique();
+	}
+	
 	public static User getUserByMobileNumber(String mobileNumber) {
 		return find.where().eq("mobileNumber", mobileNumber).findUnique();
 	}
