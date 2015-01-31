@@ -155,7 +155,7 @@ public class Application extends Controller {
     	Random ran = new Random();
     	
     	int num=0;
-    	for(int i=0;i<4;i++) {
+    	for(int i=0;i<6;i++) {
     		num = (num*10)+ran.nextInt(10);
     	}
     	return num+"";
