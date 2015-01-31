@@ -29,16 +29,15 @@ public class Application extends Controller {
     	try{
     		Form<RegisterForm> form = DynamicForm.form(RegisterForm.class).bindFromRequest();
     		RegisterForm rForm = form.get();
-    		if(     rForm.userName.isEmpty()||
-    				rForm.userName==null||
-    				rForm.password.isEmpty()||
-    	    		rForm.password==null||
-    				rForm.mobileNumber.isEmpty()||
-    				rForm.mobileNumber==null||
-    				rForm.email==null||
-    				rForm.email.isEmpty()||
-    				rForm.countryCode==null||
-    				rForm.countryCode.isEmpty()) {
+    		if( rForm.userName==null ||
+				rForm.userName.isEmpty() ||
+				rForm.mobileNumber==null ||
+				rForm.mobileNumber.isEmpty() ||
+				rForm.email==null ||
+				rForm.email.isEmpty() ||
+				rForm.countryCode==null ||
+				rForm.countryCode.isEmpty()) {
+    			
     			return ok(Json.toJson(new ErrorResponse(Error.E202.getCode(), Error.E202.getMessage())));
     		} else {
     			try {
@@ -49,9 +48,6 @@ public class Application extends Controller {
     			} catch(NumberFormatException e) {
     				return ok(Json.toJson(new ErrorResponse(Error.E206.getCode(), Error.E206.getMessage())));
     			}
-    			if(User.getUserByMobileNumber(rForm.mobileNumber)!=null) {
-    				return ok(Json.toJson(new ErrorResponse(Error.E210.getCode(), Error.E210.getMessage())));
-    			} 
     			
     			try {
     				Long.parseLong(rForm.countryCode);
@@ -59,15 +55,32 @@ public class Application extends Controller {
     				return ok(Json.toJson(new ErrorResponse(Error.E203.getCode(), Error.E203.getMessage())));
     			}
     			
-    			User userObj = new User();
-    			userObj.mobileNumber = rForm.mobileNumber;
-    			userObj.userName = rForm.userName;
-    			userObj.password = User.md5Encryption(rForm.password);
-    			userObj.email = rForm.email;
-    			userObj.countryCode = rForm.countryCode;
-    			userObj.verificationCode = getRandomCode();
-    			userObj.status = "pending";
-    			userObj.save();
+    			//mobile_number
+    			User userObj = User.getUserByMobileNumber(rForm.mobileNumber);
+    			if (userObj != null) {
+    				if ("approved".equalsIgnoreCase(userObj.status) ) {
+        				//user already exists send error code.
+        				return ok(Json.toJson(new ErrorResponse(Error.E210.getCode(), Error.E210.getMessage())));
+    				} else {
+    					//update the user information and update the record..
+    					userObj.mobileNumber = rForm.mobileNumber;
+            			userObj.userName = rForm.userName;
+            			userObj.email = rForm.email;
+            			userObj.countryCode = rForm.countryCode;
+            			userObj.verificationCode = getRandomCode();
+            			userObj.status = "pending";
+            			userObj.update();
+    				}
+    			} else {
+    				userObj = new User();
+        			userObj.mobileNumber = rForm.mobileNumber;
+        			userObj.userName = rForm.userName;
+        			userObj.email = rForm.email;
+        			userObj.countryCode = rForm.countryCode;
+        			userObj.verificationCode = getRandomCode();
+        			userObj.status = "pending";
+        			userObj.save();
+        		}
     			
     			/*String action = "sendsms";
     			String user = "shabeebcool@gmail.com";
@@ -97,7 +110,6 @@ public class Application extends Controller {
     				return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
     			}
     			
-    			//return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
     		}
     	} catch(Exception e) {
     		return ok(Json.toJson(new ErrorResponse("500",e.getMessage())));
@@ -165,21 +177,20 @@ public class Application extends Controller {
     	public String userName;
     	public String password;
     	public String verificationCode;
+    	public String mobileNumber;
     }
     
     public static Result validateUser() {
     	try {
     		ValidateForm form = DynamicForm.form(ValidateForm.class).bindFromRequest().get();
-    		if(form.userName==null ||
-    				form.userName.isEmpty() ||
-    				form.password==null ||
-    				form.password.isEmpty()||
-    				form.verificationCode==null ||
-    				form.verificationCode.isEmpty()) {
+    		if(	form.mobileNumber==null ||
+				form.mobileNumber.isEmpty() ||
+				form.verificationCode==null ||
+				form.verificationCode.isEmpty()) {
     			return ok(Json.toJson(new ErrorResponse(Error.E202.getCode(), Error.E202.getMessage())));
     		} else {
     			
-    			User user = User.getUserByUserNameAndPassword(form.userName, form.password);
+    			User user = User.getUserByMobileNumber(form.mobileNumber);
     			if(user == null) {
     				return ok(Json.toJson(new ErrorResponse(Error.E208.getCode(), Error.E208.getMessage())));
     			} else {
@@ -187,6 +198,7 @@ public class Application extends Controller {
     					return ok(Json.toJson(new ErrorResponse(Error.E207.getCode(), Error.E207.getMessage())));
     				} else {
     					user.status = "approved";
+    					user.verificationCode = "";
     					user.update();
     					return ok(Json.toJson(new ErrorResponse(Error.E209.getCode(), Error.E209.getMessage())));
     				}
