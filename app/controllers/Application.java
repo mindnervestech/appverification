@@ -1,24 +1,28 @@
 package controllers;
 
-import java.net.HttpURLConnection;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Random;
+import java.util.UUID;
+
 import models.User;
-
-
 import play.data.DynamicForm;
 import play.data.Form;
 import play.libs.Json;
-import play.mvc.*;
-
+import play.mvc.Controller;
+import play.mvc.Result;
 import viewmodel.ResponseVM;
-import views.html.*;
 
 public class Application extends Controller {
   
     public static Result index() {
-        return ok(index.render("Your new application is ready."));
+        //return ok(index.render("Your new application is ready."));
+		return ok();
     }
   
     public static Result register() {
@@ -65,20 +69,35 @@ public class Application extends Controller {
     			userObj.status = "pending";
     			userObj.save();
     			
-    			String action = "sendsms";
+    			/*String action = "sendsms";
     			String user = "shabeebcool@gmail.com";
     			String password = "Shabeeb123!@#";
     			String from = "Test";
-    			String to = userObj.countryCode+userObj.mobileNumber;
+    			String to = "00" + userObj.countryCode + userObj.mobileNumber;
+    			String text = URLEncoder.encode("Verification Code "+userObj.verificationCode,"UTF-8");
+    			*/
+    			
+    			String toMobileNumber = "00" + userObj.countryCode + userObj.mobileNumber;
     			String text = URLEncoder.encode("Verification Code "+userObj.verificationCode,"UTF-8");
     			
-    			URL url = new URL("http://www.smsglobal.com/http-api.php"+"?action="+action+"&user="+user+"&password="+password+"&from="+from+"&to="+to+"&text="+text);
+    			/*URL url = new URL("http://www.smsglobal.com/http-api.php"+"?action="+action+"&user="+user+"&password="+password+"&from="+from+"&to="+to+"&text="+text);
     			HttpURLConnection con = (HttpURLConnection) url.openConnection();
     			con.setRequestMethod("GET");
     			int responseCode = con.getResponseCode();
     			String resp = con.getResponseMessage();
-    			System.out.println(resp+responseCode);
-    			return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
+    			System.out.println(resp+responseCode);*/
+    			
+    			ResponseVM responseVM = new ResponseVM();
+    			try {
+    				sendNotification(toMobileNumber, text);
+    				responseVM.code = "200";
+        			responseVM.message = "Login Successful!";
+    				return ok(Json.toJson(responseVM));
+    			} catch (Exception e) {
+    				return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
+    			}
+    			
+    			//return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
     		}
     	} catch(Exception e) {
     		return ok(Json.toJson(new ErrorResponse("500",e.getMessage())));
@@ -208,6 +227,47 @@ public class Application extends Controller {
     	} catch(Exception e) {
     		return ok(Json.toJson(new ErrorResponse("500",e.getMessage())));
     	} 
+    }
+    
+    public static void sendNotification(String mobileNumber, String textMessage) throws Exception {
+    	final String URL = "https://secure.cm.nl/smssgateway/cm/gateway.ashx";
+        try {
+            final UUID productToken = UUID.fromString("af639359-e0aa-4409-ae62-2ad98faf3e92");
+            final String xml = "<?xml version=\"1.0\"?><MESSAGES><AUTHENTICATION><PRODUCTTOKEN>" 
+            		+ productToken + "</PRODUCTTOKEN></AUTHENTICATION> <MSG> <FROM>My company</FROM> "
+            		+ "<TO>" + mobileNumber + "</TO><BODY>" 
+            		+ textMessage + "</BODY> </MSG></MESSAGES>";
+            
+            final String response = doHttpPost(URL, xml);
+        } catch (Exception e) {
+            System.err.println(e); // Display the string.
+            throw e;
+        }
+    }
+    
+    private static String doHttpPost(String urlString, String requestString) {
+        try {
+            URL url = new URL(urlString);
+            URLConnection conn = url.openConnection();
+            conn.setDoOutput(true);
+
+            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
+            wr.write(requestString);
+            wr.flush();
+            // Get the response
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String line;
+            String response = "";
+            while ((line = rd.readLine()) != null) {
+                response += line;
+            }
+            wr.close();
+            rd.close();
+
+            return response;
+        } catch (IOException ex) {
+            System.err.println(ex); return ex.toString();
+        }
     }
     
 }
