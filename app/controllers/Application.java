@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Random;
 import java.util.UUID;
@@ -89,7 +89,7 @@ public class Application extends Controller {
     			String to = "00" + userObj.countryCode + userObj.mobileNumber;
     			String text = URLEncoder.encode("Verification Code "+userObj.verificationCode,"UTF-8");
     			*/
-    			
+    			System.out.println("sendNotification...");
     			String toMobileNumber = "00" + userObj.countryCode + userObj.mobileNumber;
     			String text = URLEncoder.encode("Verification Code "+userObj.verificationCode,"UTF-8");
     			
@@ -100,16 +100,15 @@ public class Application extends Controller {
     			String resp = con.getResponseMessage();
     			System.out.println(resp+responseCode);*/
     			
-    			ResponseVM responseVM = new ResponseVM();
+    			//ResponseVM responseVM = new ResponseVM();
     			try {
-    				sendNotification(toMobileNumber, text);
-    				responseVM.code = "200";
-        			responseVM.message = "Login Successful!";
-    				return ok(Json.toJson(responseVM));
+    				String response = sendNotification(toMobileNumber, text);
+    				//responseVM.code = "200";
+        			//responseVM.message = "Registration Successful!";
+        			return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), response)));
     			} catch (Exception e) {
     				return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), Error.E204.getMessage())));
     			}
-    			
     		}
     	} catch(Exception e) {
     		return ok(Json.toJson(new ErrorResponse("500",e.getMessage())));
@@ -244,28 +243,44 @@ public class Application extends Controller {
     	} 
     }
     
-    public static void sendNotification(String mobileNumber, String textMessage) throws Exception {
+    public static Result sendNotif() {
+    	try {
+    		System.out.println("sendNotif..");
+			//sendNotification("+919822833235", "text message");
+			return ok(Json.toJson(new ErrorResponse(Error.E204.getCode(), sendNotification("+919822833235", "text message"))));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			System.out.println(" exception " + e);
+			e.printStackTrace();
+		}
+    	return ok();
+    }
+    
+    public static String sendNotification(String mobileNumber, String textMessage) throws Exception {
     	final String URL = "https://secure.cm.nl/smssgateway/cm/gateway.ashx";
         try {
             final UUID productToken = UUID.fromString("af639359-e0aa-4409-ae62-2ad98faf3e92");
             final String xml = "<?xml version=\"1.0\"?><MESSAGES><AUTHENTICATION><PRODUCTTOKEN>" 
-            		+ productToken + "</PRODUCTTOKEN></AUTHENTICATION> <MSG> <FROM>My company</FROM> "
+            		+ productToken.toString() + "</PRODUCTTOKEN></AUTHENTICATION> <MSG> <FROM>Company</FROM> "
             		+ "<TO>" + mobileNumber + "</TO><BODY>" 
             		+ textMessage + "</BODY> </MSG></MESSAGES>";
             
             final String response = doHttpPost(URL, xml);
+            return response;
         } catch (Exception e) {
-            System.err.println(e); // Display the string.
+            System.out.println(e); // Display the string.
             throw e;
         }
+        
     }
     
     private static String doHttpPost(String urlString, String requestString) {
         try {
             URL url = new URL(urlString);
-            URLConnection conn = url.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
             conn.setDoOutput(true);
-
+            conn.setDoInput(true);
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
             wr.write(requestString);
             wr.flush();
@@ -275,12 +290,14 @@ public class Application extends Controller {
             String response = "";
             while ((line = rd.readLine()) != null) {
                 response += line;
-            }
+            } 
+            System.out.println("doHttp line " + response);
             wr.close();
             rd.close();
 
             return response;
         } catch (IOException ex) {
+        	ex.printStackTrace();
             System.err.println(ex); return ex.toString();
         }
     }
