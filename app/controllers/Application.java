@@ -40,7 +40,7 @@ public class Application extends Controller {
     		} else {
     			try {
     				Long.parseLong(rForm.mobileNumber);
-    				if(rForm.mobileNumber.length()<10 || rForm.mobileNumber.length()>10) {
+    				if(rForm.mobileNumber.length() <= 10 || rForm.mobileNumber.length() >= 8) {
     					return ok(Json.toJson(new ErrorResponse(Error.E206.getCode(), Error.E206.getMessage())));
     				} 
     			} catch(NumberFormatException e) {
