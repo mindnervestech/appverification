@@ -82,7 +82,7 @@ public class Application extends Controller {
     			
     		
     			String toMobileNumber = "00" + userObj.countryCode + userObj.mobileNumber;
-    			String text = URLEncoder.encode("Code:" + userObj.verificationCode,"UTF-8");
+    			String text = ("Code:" + userObj.verificationCode);
     			
     			//ResponseVM responseVM = new ResponseVM();
     			try {
