@@ -58,7 +58,7 @@ public class Application extends Controller {
     			if (userObj != null) {
     				if ("approved".equalsIgnoreCase(userObj.status) ) {
         				//user already exists send error code.
-        				return ok(Json.toJson(new ErrorResponse("210", Error.E210.getMessage())));
+        				return ok(Json.toJson(new ErrorResponse(Error.E210.getCode(), Error.E210.getMessage())));
     				} else {
     					//update the user information and update the record..
     					userObj.mobileNumber = rForm.mobileNumber;
